@@ -690,8 +690,12 @@ async function saveImage(){
     // ── 7. 저장용 여백 ───────────────────────────────────────
     const origPad=captureEl.style.padding;
     const origMax=captureEl.style.maxWidth;
-    captureEl.style.padding='56px 72px 64px';
-    captureEl.style.maxWidth='none';
+    const origWidth=captureEl.style.width; // 원래 width 저장
+
+    // 여백을 대폭 줄이고, 캡처 영역을 실제 콘텐츠 크기에 딱 맞춥니다 (fit-content)
+    captureEl.style.padding='32px 32px 40px'; 
+    captureEl.style.width='fit-content';
+    captureEl.style.maxWidth='1080px'; 
 
     // DOM 반영 대기
     await new Promise(r=>setTimeout(r,60));
@@ -711,6 +715,7 @@ async function saveImage(){
     // 여백 복구 (finally 전에 복구)
     captureEl.style.padding=origPad;
     captureEl.style.maxWidth=origMax;
+    captureEl.style.width=origWidth; // width 상태도 원래대로 복구
 
   } catch(err){
     alert('저장 오류: '+err.message);
