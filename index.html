@@ -491,6 +491,8 @@ function setupImgPanZoom(imgWrap, card, img){
 
   imgWrap.addEventListener('mousedown', e=>{
     if(e.button!==0) return;
+    // 이름·속성 등 조작 영역은 드래그 제외
+    if(e.target.closest('.card-inner-info')) return;
     dragging=true; dragMoved=false;
     startX=e.clientX; startY=e.clientY;
     startPanX=card.imgPan.x; startPanY=card.imgPan.y;
