@@ -41,6 +41,43 @@ body {
   border-radius: 3px; cursor: pointer;
   background: none; padding: 1px;
 }
+.color-ctrl-group {
+  display: flex; align-items: center; gap: 7px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px; letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.45);
+}
+.color-ctrl-group .pickers {
+  display: flex; align-items: center; gap: 3px;
+}
+.grad-arrow {
+  font-size: 10px; color: rgba(255,255,255,0.3);
+  user-select: none;
+}
+.dir-btn {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.45);
+  font-size: 13px; width: 22px; height: 22px;
+  border-radius: 3px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; padding: 0;
+}
+.dir-btn:hover { background: rgba(255,255,255,0.14); color: #fff; }
+.grad-preview-line {
+  width: 44px; height: 3px; border-radius: 2px;
+  background: #fff; flex-shrink: 0;
+}
+.grad-preview-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.15em;
+  background: linear-gradient(to right, #fff, #fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  user-select: none; flex-shrink: 0;
+}
 
 /* ── Page Header ─────────────────────────────────────── */
 .page-header {
@@ -143,6 +180,10 @@ body {
   font-size: 11px; font-weight: 600;
   letter-spacing: 0.2em; color: var(--class-color);
   outline: none; min-width: 20px; cursor: text; text-transform: uppercase;
+  background: var(--class-grad, none);
+  -webkit-background-clip: var(--class-grad-clip, unset);
+  -webkit-text-fill-color: var(--class-text-fill, var(--class-color));
+  background-clip: var(--class-grad-clip, unset);
 }
 .section-class:focus { border-bottom: 1px solid rgba(255,255,255,0.25); }
 .section-del {
@@ -321,16 +362,31 @@ body {
 </div>
 
 <div class="color-controls">
-  <div class="color-ctrl-item">
-    <label for="ctrl-line">선 색</label>
-    <input type="color" id="ctrl-line" value="#ffffff" oninput="updateLineColor(this.value)">
+  <!-- 선 색 -->
+  <div class="color-ctrl-group">
+    <span>선 색</span>
+    <div class="pickers">
+      <input type="color" id="ctrl-line-a" value="#ffffff" oninput="updateLineGrad()">
+      <span class="grad-arrow">→</span>
+      <input type="color" id="ctrl-line-b" value="#ffffff" oninput="updateLineGrad()">
+    </div>
+    <button class="dir-btn" id="line-dir-btn" title="방향 전환" onclick="toggleLineDir()">↔</button>
+    <div class="grad-preview-line" id="line-preview"></div>
   </div>
-  <div class="color-ctrl-item">
-    <label for="ctrl-class">CLASS 글씨 색</label>
-    <input type="color" id="ctrl-class" value="#ffffff" oninput="updateClassColor(this.value)">
+  <!-- CLASS 글씨 색 -->
+  <div class="color-ctrl-group">
+    <span>CLASS 색</span>
+    <div class="pickers">
+      <input type="color" id="ctrl-class-a" value="#ffffff" oninput="updateClassGrad()">
+      <span class="grad-arrow">→</span>
+      <input type="color" id="ctrl-class-b" value="#ffffff" oninput="updateClassGrad()">
+    </div>
+    <button class="dir-btn" id="class-dir-btn" title="방향 전환" onclick="toggleClassDir()">↔</button>
+    <div class="grad-preview-text" id="class-preview">CLASS</div>
   </div>
-  <div class="color-ctrl-item">
-    <label for="ctrl-bg">배경 색</label>
+  <!-- 배경 색 -->
+  <div class="color-ctrl-group">
+    <span>배경 색</span>
     <input type="color" id="ctrl-bg" value="#0d1117" oninput="updateBgColor(this.value)">
   </div>
 </div>
@@ -365,15 +421,113 @@ window.addEventListener('load', () => {
 });
 
 // ── Color Controls ──────────────────────────────────────
-function updateLineColor(hex) {
+let lineDir = 'to right';
+let classDir = 'to right';
+
+const LINE_DIRS  = ['to right','to bottom right','to bottom','to bottom left','to left'];
+const CLASS_DIRS = ['to right','to bottom right','to bottom','to bottom left','to left'];
+const DIR_ICONS  = ['↔','↘','↕','↙','↔'];
+
+function hexToRgba(hex, a) {
   const r = parseInt(hex.slice(1,3),16);
   const g = parseInt(hex.slice(3,5),16);
   const b = parseInt(hex.slice(5,7),16);
-  document.documentElement.style.setProperty('--line-color', `rgba(${r},${g},${b},0.55)`);
+  return `rgba(${r},${g},${b},${a})`;
 }
-function updateClassColor(hex) {
-  document.documentElement.style.setProperty('--class-color', hex);
+
+function updateLineGrad() {
+  const a = document.getElementById('ctrl-line-a').value;
+  const b = document.getElementById('ctrl-line-b').value;
+  const isSolid = a === b;
+
+  if (isSolid) {
+    const solid = hexToRgba(a, 0.55);
+    document.documentElement.style.setProperty('--line-color', solid);
+    document.documentElement.style.setProperty('--line-grad-start', solid);
+    document.documentElement.style.setProperty('--line-grad-end', solid);
+  } else {
+    document.documentElement.style.setProperty('--line-grad-start', hexToRgba(a, 0.85));
+    document.documentElement.style.setProperty('--line-grad-end', hexToRgba(b, 0.85));
+    document.documentElement.style.setProperty('--line-color', hexToRgba(a, 0.55));
+  }
+  document.documentElement.style.setProperty('--line-grad-dir', lineDir);
+
+  // update section-header::after via dynamic style tag
+  applyLineStyle();
+
+  // preview
+  const prev = document.getElementById('line-preview');
+  prev.style.background = isSolid
+    ? a
+    : `linear-gradient(${lineDir}, ${a}, ${b})`;
 }
+
+function applyLineStyle() {
+  const a = document.getElementById('ctrl-line-a').value;
+  const b = document.getElementById('ctrl-line-b').value;
+  const isSolid = a === b;
+  let styleEl = document.getElementById('dynamic-line-style');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'dynamic-line-style';
+    document.head.appendChild(styleEl);
+  }
+  if (isSolid) {
+    const c = hexToRgba(a, 0.55);
+    styleEl.textContent = `.section-header::after { background: linear-gradient(to right, ${hexToRgba(a,0.85)} 0%, ${hexToRgba(a,0.38)} 35%, ${hexToRgba(a,0.09)} 65%, transparent 100%) !important; }`;
+  } else {
+    const ca = hexToRgba(a, 0.85);
+    const cm = hexToRgba(b, 0.45);
+    const ce = `transparent`;
+    styleEl.textContent = `.section-header::after { background: linear-gradient(${lineDir}, ${ca} 0%, ${cm} 50%, ${ce} 100%) !important; }`;
+  }
+}
+
+function toggleLineDir() {
+  const dirs = LINE_DIRS;
+  const idx = (dirs.indexOf(lineDir) + 1) % dirs.length;
+  lineDir = dirs[idx];
+  document.getElementById('line-dir-btn').textContent = DIR_ICONS[idx];
+  updateLineGrad();
+}
+
+function updateClassGrad() {
+  const a = document.getElementById('ctrl-class-a').value;
+  const b = document.getElementById('ctrl-class-b').value;
+  const isSolid = a === b;
+  const prev = document.getElementById('class-preview');
+
+  let styleEl = document.getElementById('dynamic-class-style');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'dynamic-class-style';
+    document.head.appendChild(styleEl);
+  }
+
+  if (isSolid) {
+    styleEl.textContent = `.section-class { background: none !important; -webkit-background-clip: unset !important; -webkit-text-fill-color: ${a} !important; background-clip: unset !important; color: ${a} !important; }`;
+    prev.style.background = a;
+    prev.style.webkitBackgroundClip = 'unset';
+    prev.style.webkitTextFillColor = a;
+    prev.style.backgroundClip = 'unset';
+  } else {
+    const grad = `linear-gradient(${classDir}, ${a}, ${b})`;
+    styleEl.textContent = `.section-class { background: ${grad} !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; color: transparent !important; }`;
+    prev.style.background = grad;
+    prev.style.webkitBackgroundClip = 'text';
+    prev.style.webkitTextFillColor = 'transparent';
+    prev.style.backgroundClip = 'text';
+  }
+}
+
+function toggleClassDir() {
+  const dirs = CLASS_DIRS;
+  const idx = (dirs.indexOf(classDir) + 1) % dirs.length;
+  classDir = dirs[idx];
+  document.getElementById('class-dir-btn').textContent = DIR_ICONS[idx];
+  updateClassGrad();
+}
+
 function updateBgColor(hex) {
   document.documentElement.style.setProperty('--bg', hex);
   document.getElementById('roster-canvas').style.background = hex;
