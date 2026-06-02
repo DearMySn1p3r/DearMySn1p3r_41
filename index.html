@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCH ROSTER</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans+KR:wght@300;400;500&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --bg: #0a0a0a; --border: rgba(255,255,255,0.08); }
+
+body {
+  background: var(--bg); color: #fff;
+  font-family: 'Noto Sans KR', sans-serif;
+  min-height: 100vh; padding: 40px 24px 80px;
+}
+
+/* ── Page Header ─────────────────────────────────────── */
+.page-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.page-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 42px; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: #fff; user-select: none;
+}
+.title-underline {
+  width: 100%;
+  height: 1px;
+  background: rgba(255,255,255,0.22);
+  margin-top: 14px;
+}
+
+/* ── Controls ────────────────────────────────────────── */
+.controls {
+  display: flex; justify-content: center;
+  gap: 10px; margin-bottom: 32px; flex-wrap: wrap;
+}
+.btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.55);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px; letter-spacing: 0.1em;
+  padding: 8px 20px; cursor: pointer;
+  transition: all 0.2s; border-radius: 2px;
+}
+.btn:hover { border-color: rgba(255,255,255,0.35); color: #fff; }
+.btn-save { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.2); color: #fff; }
+.btn-save:hover { background: rgba(255,255,255,0.12); }
+
+/* ── Capture wrapper ─────────────────────────────────── */
+#capture-area { max-width: 1080px; margin: 0 auto; }
+
+#roster-canvas {
+  max-width: 1000px; margin: 0 auto;
+  background: var(--bg); padding: 32px 0;
+}
+
+/* ── Section ─────────────────────────────────────────── */
+.section { margin-bottom: 44px; }
+.section-header {
+  position: relative;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px;
+  padding-bottom: 10px;
+  gap: 12px;
+}
+.section-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(to right,
+    rgba(255,255,255,0.55) 0%,
+    rgba(255,255,255,0.25) 35%,
+    rgba(255,255,255,0.06) 65%,
+    transparent 100%
+  );
+}
+
+.section-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 18px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: #fff; outline: none; min-width: 40px; cursor: text;
+}
+.section-name:focus { border-bottom: 1px solid rgba(255,255,255,0.25); }
+.section-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.section-class {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.2em; color: #fff;
+  outline: none; min-width: 20px; cursor: text; text-transform: uppercase;
+}
+.section-class:focus { border-bottom: 1px solid rgba(255,255,255,0.25); }
+.section-del {
+  color: rgba(255,255,255,0.18); cursor: pointer;
+  font-size: 15px; padding: 0 2px; transition: color 0.2s;
+  user-select: none; background: none; border: none; line-height: 1;
+}
+.section-del:hover { color: rgba(255,255,255,0.5); }
+
+/* ── Card grid ───────────────────────────────────────── */
+.card-grid { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
+
+/* ── Card ────────────────────────────────────────────── */
+.card { position: relative; width: 128px; flex-shrink: 0; }
+
+.card-img-wrap {
+  position: relative; width: 128px; height: 158px;
+  border-radius: 7px; overflow: hidden;
+  background: #161616; cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.35);
+  contain: paint;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.card-img-wrap img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.3s ease;
+}
+.card-img-wrap:hover img { transform: scale(1.04); }
+
+/* gradient overlay */
+.card-gradient {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 62%; pointer-events: none; z-index: 1;
+}
+.grad-sentinel .card-gradient {
+  background: linear-gradient(to top, rgba(0,0,0,0.90) 0%, transparent 100%);
+}
+.grad-guide .card-gradient {
+  background: linear-gradient(to top, rgba(255,255,255,0.88) 0%, transparent 100%);
+}
+
+/* inner info */
+.card-inner-info {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 4;
+  padding: 0 8px 8px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+}
+
+.card-name {
+  font-size: 12px; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  cursor: text; outline: none;
+  max-width: 112px; text-align: left; width: 100%;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: #fff !important; 
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8); 
+}
+.card-name:focus { background: rgba(128,128,128,0.15); border-radius: 2px; padding: 0 3px; }
+
+/* attr select */
+.card-attr-select {
+  appearance: none; -webkit-appearance: none;
+  border: none; outline: none;
+  font-size: 10px;
+  padding: 2px 10px 2px;
+  border-radius: 20px; color: #fff;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 500; cursor: pointer;
+  text-align: center; text-align-last: center;
+  line-height: 1.4;
+}
+.card-attr-select option { background: #1a1a1a; color: #fff; }
+
+.attr-fire      { background: rgba(220,72,40,0.92);   color: #fff; }
+.attr-water     { background: rgba(50,140,210,0.92);  color: #fff; }
+.attr-grass     { background: rgba(60,160,80,0.92);   color: #fff; }
+.attr-lightning { background: rgba(230,185,30,0.95);  color: #1a1000; }
+.attr-wind      { background: rgba(100,195,170,0.92); color: #051510; }
+.attr-ice       { background: rgba(140,210,235,0.90); color: #0d2530; }
+.attr-none      { background: rgba(140,140,150,0.70); color: rgba(255,255,255,0.9); }
+
+/* remove btn */
+.card-remove {
+  position: absolute; top: 5px; right: 5px;
+  width: 20px; height: 20px;
+  background: rgba(0,0,0,0.65);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 2px; color: rgba(255,255,255,0.5);
+  font-size: 11px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.2s; z-index: 10;
+}
+.card:hover .card-remove { opacity: 1; }
+
+/* upload overlay */
+.card-upload-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.45); opacity: 0;
+  transition: opacity 0.2s;
+  cursor: pointer; z-index: 3;
+  pointer-events: none;
+}
+.card-img-wrap:hover .card-upload-overlay { opacity: 1; pointer-events: auto; }
+.card-img-wrap:has(.card-inner-info:hover) .card-upload-overlay { opacity: 0 !important; pointer-events: none !important; }
+.card-upload-overlay span {
+  font-size: 10px; color: rgba(255,255,255,0.85);
+  letter-spacing: 0.08em; font-family: 'Rajdhani', sans-serif;
+}
+
+/* placeholder */
+.card-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 6px;
+  color: rgba(255,255,255,0.2); font-size: 10px;
+  font-family: 'Rajdhani', sans-serif; letter-spacing: 0.06em; cursor: pointer;
+}
+
+/* type toggle */
+.card-type-toggle {
+  position: absolute; top: 5px; left: 5px;
+  font-size: 8px; font-family: 'Rajdhani', sans-serif;
+  letter-spacing: 0.06em; padding: 2px 6px;
+  border-radius: 2px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.55); color: rgba(255,255,255,0.65);
+  transition: all 0.2s; z-index: 10; opacity: 0;
+}
+.card:hover .card-type-toggle { opacity: 1; }
+
+/* add card btn */
+.card-add-btn {
+  width: 128px; height: 158px;
+  border: 1px dashed rgba(255,255,255,0.1);
+  border-radius: 7px; background: transparent;
+  color: rgba(255,255,255,0.16); font-size: 22px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.card-add-btn:hover { border-color: rgba(255,255,255,0.28); color: rgba(255,255,255,0.4); }
+
+.add-section-row { text-align: center; margin-top: 10px; }
+.add-section-btn {
+  background: none; border: none; color: rgba(255,255,255,0.18);
+  font-family: 'Rajdhani', sans-serif; font-size: 12px;
+  letter-spacing: 0.12em; cursor: pointer; padding: 10px 16px;
+  transition: color 0.2s;
+}
+.add-section-btn:hover { color: rgba(255,255,255,0.45); }
+
+#file-input { display: none; }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <button class="btn btn-save" onclick="saveImage()">💾 이미지로 저장</button>
+  <button class="btn" onclick="addSection()">+ 섹션 추가</button>
+</div>
+
+<div id="capture-area">
+  <div class="page-header">
+    <div class="page-title">ARCH ROSTER</div>
+    <div class="title-underline"></div>
+  </div>
+
+  <div id="roster-canvas">
+    <div id="sections-container"></div>
+    <div class="add-section-row">
+      <button class="add-section-btn" onclick="addSection()">＋ ADD SECTION</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept="image/*">
+
+<script>
+// ── Font Preload & Cache ────────────────────────────────
+let cachedFontCSS = '';
+window.addEventListener('load', () => {
+  document.fonts.ready.then(() => {
+    htmlToImage.getFontEmbedCSS(document.getElementById('capture-area'))
+      .then(css => { cachedFontCSS = css; })
+      .catch(e => console.error('Font pre-fetch failed:', e));
+  });
+});
+
+// ── Attr config ──────────────────────────────────────
+const ATTRS = [
+  { val:'무속성',     cls:'attr-none',      bg:'rgba(140,140,150,0.70)', fg:'rgba(255,255,255,0.9)' },
+  { val:'불 속성',    cls:'attr-fire',      bg:'rgba(220,72,40,0.92)',   fg:'#fff' },
+  { val:'물 속성',    cls:'attr-water',     bg:'rgba(50,140,210,0.92)',  fg:'#fff' },
+  { val:'풀 속성',    cls:'attr-grass',     bg:'rgba(60,160,80,0.92)',   fg:'#fff' },
+  { val:'번개 속성',  cls:'attr-lightning', bg:'rgba(230,185,30,0.95)',  fg:'#1a1000' },
+  { val:'바람 속성',  cls:'attr-wind',      bg:'rgba(100,195,170,0.92)', fg:'#051510' },
+  { val:'얼음 속성',  cls:'attr-ice',       bg:'rgba(140,210,235,0.90)', fg:'#0d2530' },
+];
+function attrInfo(val) { return ATTRS.find(a=>a.val===val) || ATTRS[0]; }
+function attrCls(val)  { return attrInfo(val).cls; }
+
+function normalizeAttr(raw) {
+  if (!raw) return '무속성';
+  if (ATTRS.find(a=>a.val===raw)) return raw;
+  const legacyMap = {
+    '없음 속성':'무속성', '없음 (None)':'무속성',
+    '불 (Pyre)':'불 속성', '물 (Aqua)':'물 속성',
+    '풀 (Verde)':'풀 속성', '번개 (Fulmen)':'번개 속성',
+    '바람 (Aero)':'바람 속성', '얼음 (Glacies)':'얼음 속성',
+    '어둠 속성':'무속성', '어둠':'무속성', '없음':'무속성',
+    '불':'불 속성','물':'물 속성','풀':'풀 속성',
+    '번개':'번개 속성','바람':'바람 속성','얼음':'얼음 속성',
+  };
+  if (legacyMap[raw]) return legacyMap[raw];
+  for (const [k,v] of Object.entries(legacyMap)) {
+    if (raw.includes(k)) return v;
+  }
+  return '무속성';
+}
+
+// ── State ──────────────────────────────────────────────
+let sections = [{
+  id:'s1', name:'ARCH', cls:'CLASS',
+  cards:[{id:'c1',name:'NAME',attr:'무속성',img:null,type:'sentinel'}]
+}];
+let pendingUpload=null, uid=100;
+function genId(){ return 'id'+(++uid); }
+
+// ── Render ─────────────────────────────────────────────
+function render(){
+  const c=document.getElementById('sections-container');
+  c.innerHTML='';
+  sections.forEach(sec=>c.appendChild(buildSection(sec)));
+}
+
+function buildSection(sec){
+  const div=document.createElement('div'); div.className='section';
+  div.dataset.sectionId=sec.id;
+  const hdr=document.createElement('div'); hdr.className='section-header';
+
+  const nameEl=document.createElement('div');
+  nameEl.className='section-name'; nameEl.contentEditable='true';
+  nameEl.textContent=sec.name; nameEl.spellcheck=false;
+  nameEl.addEventListener('blur',e=>{sec.name=e.target.textContent.trim()||'ARCH';});
+  nameEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();nameEl.blur();}});
+
+  const right=document.createElement('div'); right.className='section-right';
+  const clsEl=document.createElement('div');
+  clsEl.className='section-class'; clsEl.contentEditable='true';
+  clsEl.textContent=sec.cls; clsEl.spellcheck=false;
+  clsEl.addEventListener('blur',e=>{sec.cls=e.target.textContent.trim()||'CLASS';});
+  clsEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();clsEl.blur();}});
+
+  const delBtn=document.createElement('button'); delBtn.className='section-del';
+  delBtn.textContent='×'; delBtn.title='섹션 삭제';
+  delBtn.addEventListener('click',()=>{
+    sections=sections.filter(s=>s.id!==sec.id);
+    div.remove(); // ← render() 대신 직접 DOM 제거
+  });
+
+  right.appendChild(clsEl); right.appendChild(delBtn);
+  hdr.appendChild(nameEl); hdr.appendChild(right);
+
+  const grid=document.createElement('div'); grid.className='card-grid';
+  sec.cards.forEach(card=>grid.appendChild(buildCard(sec,card)));
+
+  const addBtn=document.createElement('button'); addBtn.className='card-add-btn';
+  addBtn.textContent='+';
+  addBtn.addEventListener('click',()=>{
+    const newCard={id:genId(),name:'NAME',attr:'무속성',img:null,type:'sentinel'};
+    sec.cards.push(newCard);
+    grid.insertBefore(buildCard(sec,newCard),addBtn); // ← render() 대신 직접 삽입
+  });
+  grid.appendChild(addBtn);
+
+  div.appendChild(hdr); div.appendChild(grid);
+  return div;
+}
+
+function buildCard(sec,card){
+  const type=card.type||'sentinel';
+  const wrap=document.createElement('div'); wrap.className='card';
+  wrap.dataset.cardId=card.id; // ← 이미지 업로드 시 DOM 탐색용
+
+  const imgWrap=document.createElement('div');
+  imgWrap.className='card-img-wrap grad-'+type;
+
+  if(card.img){
+    const img=document.createElement('img'); img.src=card.img; img.alt='';
+    img.crossOrigin='anonymous';
+    imgWrap.appendChild(img);
+    const ovl=document.createElement('div'); ovl.className='card-upload-overlay';
+    ovl.innerHTML='<span>이미지 변경</span>';
+    ovl.addEventListener('click',()=>triggerUpload(sec.id,card.id));
+    imgWrap.appendChild(ovl);
+  } else {
+    const ph=document.createElement('div'); ph.className='card-placeholder';
+    ph.innerHTML=`<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M21 15l-5-5L5 21" stroke="currentColor" stroke-width="1.5"/></svg><span>IMAGE</span>`;
+    ph.addEventListener('click',()=>triggerUpload(sec.id,card.id));
+    imgWrap.appendChild(ph);
+  }
+
+  const grad=document.createElement('div'); grad.className='card-gradient';
+  imgWrap.appendChild(grad);
+
+  const info=document.createElement('div'); info.className='card-inner-info';
+
+  const nameEl=document.createElement('div'); nameEl.className='card-name';
+  nameEl.contentEditable='true'; nameEl.textContent=card.name; nameEl.spellcheck=false;
+  nameEl.addEventListener('blur',e=>{card.name=e.target.textContent.trim()||'NAME';});
+  nameEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();nameEl.blur();}});
+  nameEl.addEventListener('click',e=>e.stopPropagation());
+
+  const normAttr=normalizeAttr(card.attr);
+  const sel=document.createElement('select');
+  sel.className='card-attr-select '+attrCls(normAttr);
+  ATTRS.forEach(a=>{
+    const opt=document.createElement('option');
+    opt.value=a.val; opt.textContent=a.val;
+    if(a.val===normAttr) opt.selected=true;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change',e=>{
+    card.attr=e.target.value;
+    sel.className='card-attr-select '+attrCls(e.target.value);
+    const ai=attrInfo(e.target.value);
+    sel.style.background=ai.bg; sel.style.color=ai.fg;
+  });
+  sel.addEventListener('click',e=>e.stopPropagation());
+  const initAi=attrInfo(normAttr);
+  sel.style.background=initAi.bg; sel.style.color=initAi.fg;
+
+  info.appendChild(nameEl); info.appendChild(sel);
+  imgWrap.appendChild(info);
+
+  const typeToggle=document.createElement('button'); typeToggle.className='card-type-toggle';
+  typeToggle.textContent=type==='sentinel'?'SENTINEL':'GUIDE';
+  typeToggle.addEventListener('click',e=>{
+    e.stopPropagation();
+    card.type=(card.type==='sentinel')?'guide':'sentinel';
+    // ← render() 대신 해당 요소만 in-place 업데이트
+    imgWrap.className='card-img-wrap grad-'+card.type;
+    typeToggle.textContent=card.type==='sentinel'?'SENTINEL':'GUIDE';
+  });
+  imgWrap.appendChild(typeToggle);
+
+  const removeBtn=document.createElement('button'); removeBtn.className='card-remove';
+  removeBtn.textContent='×';
+  removeBtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    sec.cards=sec.cards.filter(c=>c.id!==card.id);
+    wrap.remove(); // ← render() 대신 직접 DOM 제거
+  });
+  imgWrap.appendChild(removeBtn);
+
+  wrap.appendChild(imgWrap);
+  return wrap;
+}
+
+// ── Upload ──────────────────────────────────────────────
+function triggerUpload(secId,cardId){
+  pendingUpload={secId,cardId};
+  document.getElementById('file-input').click();
+}
+
+function applyImageToCard(sec,card,src){
+  card.img=src;
+  const cardEl=document.querySelector(`[data-card-id="${card.id}"]`);
+  if(!cardEl) return;
+  const iw=cardEl.querySelector('.card-img-wrap');
+  iw.querySelector('.card-placeholder')?.remove();
+  iw.querySelectorAll('img,.card-upload-overlay').forEach(n=>n.remove());
+  const img=document.createElement('img');
+  img.src=src; img.alt='';
+  iw.insertBefore(img,iw.firstChild);
+  const ovl=document.createElement('div'); ovl.className='card-upload-overlay';
+  ovl.innerHTML='<span>이미지 변경</span>';
+  ovl.addEventListener('click',()=>triggerUpload(sec.id,card.id));
+  iw.insertBefore(ovl,iw.querySelector('.card-gradient'));
+}
+
+document.getElementById('file-input').addEventListener('change',e=>{
+  const file=e.target.files[0];
+  if(!file||!pendingUpload) return;
+  const {secId,cardId}=pendingUpload;
+  pendingUpload=null; e.target.value='';
+
+  const sec=sections.find(s=>s.id===secId);
+  const card=sec&&sec.cards.find(c=>c.id===cardId);
+  if(!card) return;
+
+  // ① 즉시 표시: blob URL (인코딩 없이 0ms)
+  const blobUrl=URL.createObjectURL(file);
+  applyImageToCard(sec,card,blobUrl);
+
+  // ② 백그라운드: 원본 품질 data URL로 교체 (저장 호환)
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    card.img=ev.target.result;
+    const imgEl=document.querySelector(`[data-card-id="${card.id}"] .card-img-wrap img`);
+    if(imgEl) imgEl.src=ev.target.result;
+    URL.revokeObjectURL(blobUrl);
+  };
+  reader.readAsDataURL(file);
+});
+
+// ── Add Section ─────────────────────────────────────────
+function addSection(){
+  const newSec={id:genId(),name:'ARCH',cls:'CLASS',cards:[]};
+  sections.push(newSec);
+  // ← render() 대신 직접 DOM에 추가
+  document.getElementById('sections-container').appendChild(buildSection(newSec));
+}
+
+// ── Save Image ──────────────────────────────────────────
+async function saveImage(){
+  const btn=document.querySelector('.btn-save');
+  btn.textContent='저장 중...'; btn.disabled=true;
+  document.activeElement?.blur();
+  window.scrollTo(0,0);
+
+  // 레이아웃 안정화 대기
+  await new Promise(r=>setTimeout(r,80));
+
+  const captureEl=document.getElementById('capture-area');
+  const hidden=[];
+  const replaced=[];
+  const ceEls=[];
+  const imgTransforms=[];
+
+  try {
+    // ── 1. UI 컨트롤 숨기기 ──────────────────────────────
+    const HIDE=[
+      '.card-add-btn','.section-del','.card-upload-overlay',
+      '.card-remove','.card-type-toggle','.add-section-row'
+    ];
+    HIDE.forEach(sel=>{
+      captureEl.querySelectorAll(sel).forEach(el=>{
+        hidden.push([el,el.style.display]);
+        el.style.display='none';
+      });
+    });
+
+    // ── 2. 이미지 없는 빈 카드 숨기기 ──────────────────────
+    captureEl.querySelectorAll('.card').forEach(cardEl=>{
+      if(cardEl.querySelector('.card-placeholder')){
+        hidden.push([cardEl,cardEl.style.display]);
+        cardEl.style.display='none';
+      }
+    });
+
+    // ── 3. 보이는 카드가 없는 빈 섹션 숨기기 ──────────────
+    captureEl.querySelectorAll('.section').forEach(secEl=>{
+      const visibleCards=Array.from(secEl.querySelectorAll('.card'))
+        .filter(c=>c.style.display!=='none');
+      if(visibleCards.length===0){
+        hidden.push([secEl,secEl.style.display]);
+        secEl.style.display='none';
+      }
+    });
+
+    // ── 4. <select> → <span> 임시 교체 (캡처 호환성) ────────
+    captureEl.querySelectorAll('.card-attr-select').forEach(sel=>{
+      const txt=sel.options[sel.selectedIndex]?.text||'';
+      const ai=attrInfo(txt);
+      const span=document.createElement('span');
+      span.textContent=txt;
+      span.style.cssText=[
+        'display:inline-block',
+        `background:${ai.bg}`,`color:${ai.fg}`,
+        'font-size:10px','padding:2px 10px 2px',
+        'border-radius:20px',
+        "font-family:'Noto Sans KR',sans-serif",
+        'font-weight:500','line-height:1.4',
+        'border:none','outline:none',
+        'pointer-events:none','user-select:none',
+      ].join(';');
+      sel.parentNode.replaceChild(span,sel);
+      replaced.push([span,sel]);
+    });
+
+    // ── 5. contenteditable 임시 제거 ────────────────────────
+    captureEl.querySelectorAll('[contenteditable]').forEach(el=>{
+      ceEls.push([el,el.getAttribute('contenteditable')]);
+      el.removeAttribute('contenteditable');
+      el.style.outline='none'; el.style.border='none';
+    });
+
+    // ── 6. img hover transform 임시 제거 ────────────────────
+    captureEl.querySelectorAll('.card-img-wrap img').forEach(img=>{
+      imgTransforms.push([img,img.style.transform,img.style.transition]);
+      img.style.transform='none'; img.style.transition='none';
+    });
+
+    // ── 7. 저장용 여백 ───────────────────────────────────────
+    const origPad=captureEl.style.padding;
+    const origMax=captureEl.style.maxWidth;
+    captureEl.style.padding='56px 72px 64px';
+    captureEl.style.maxWidth='none';
+
+    // DOM 반영 대기
+    await new Promise(r=>setTimeout(r,60));
+
+    const fontCSS=cachedFontCSS||await htmlToImage.getFontEmbedCSS(captureEl).catch(()=>'');
+    const dataUrl=await htmlToImage.toPng(captureEl,{
+      pixelRatio:2,
+      backgroundColor:'#0a0a0a',
+      fontEmbedCSS:fontCSS,
+    });
+
+    const a=document.createElement('a');
+    a.href=dataUrl; a.download='arch-roster.png';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>a.remove(),1000);
+
+    // 여백 복구 (finally 전에 복구)
+    captureEl.style.padding=origPad;
+    captureEl.style.maxWidth=origMax;
+
+  } catch(err){
+    alert('저장 오류: '+err.message);
+    console.error(err);
+  } finally {
+    // ── 전체 원상복구 ────────────────────────────────────────
+    hidden.forEach(([el,d])=>{el.style.display=d;});
+    replaced.forEach(([span,sel])=>{
+      if(span.parentNode) span.parentNode.replaceChild(sel,span);
+    });
+    ceEls.forEach(([el,v])=>{el.setAttribute('contenteditable',v);});
+    imgTransforms.forEach(([img,tr,ti])=>{
+      img.style.transform=tr; img.style.transition=ti;
+    });
+    btn.textContent='💾 이미지로 저장'; btn.disabled=false;
+  }
+}
+
+render();
+</script>
+</body>
+</html>
