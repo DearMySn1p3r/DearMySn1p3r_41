@@ -852,6 +852,7 @@ async function saveImage(){
   const replaced=[];
   const ceEls=[];
   const imgTransforms=[];
+  const wrapFixes=[];
 
   try {
     const HIDE=[
@@ -911,6 +912,26 @@ async function saveImage(){
       img.style.transition='none';
     });
 
+    // html-to-image의 foreignObject 렌더링을 깨뜨리는 CSS를 캡처 동안만 해제
+    // (contain:paint / backface-visibility:hidden 가 카드 이미지를 공란으로 만드는 원인)
+    captureEl.querySelectorAll('.card-img-wrap').forEach(w=>{
+      wrapFixes.push([w, w.style.contain, w.style.backfaceVisibility, w.style.webkitBackfaceVisibility]);
+      w.style.contain='none';
+      w.style.backfaceVisibility='visible';
+      w.style.webkitBackfaceVisibility='visible';
+    });
+
+    // 모든 이미지가 완전히 로드/디코드될 때까지 대기 (첫 저장 시 공란 방지)
+    const imgEls=Array.from(captureEl.querySelectorAll('.card-img-wrap img'));
+    await Promise.all(imgEls.map(async img=>{
+      try{
+        if(!img.complete || img.naturalWidth===0){
+          await new Promise(res=>{ img.onload=res; img.onerror=res; });
+        }
+        if(img.decode) await img.decode();
+      }catch(e){ /* 디코드 실패는 무시하고 진행 */ }
+    }));
+
     await new Promise(r=>setTimeout(r,60));
 
     const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#0d1117';
@@ -941,6 +962,11 @@ async function saveImage(){
     ceEls.forEach(([el,v])=>{el.setAttribute('contenteditable',v);});
     imgTransforms.forEach(([img,ti])=>{
       img.style.transition=ti;
+    });
+    wrapFixes.forEach(([w,c,bf,wbf])=>{
+      w.style.contain=c;
+      w.style.backfaceVisibility=bf;
+      w.style.webkitBackfaceVisibility=wbf;
     });
     btn.textContent='💾 이미지로 저장'; btn.disabled=false;
   }
